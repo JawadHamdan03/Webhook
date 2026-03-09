@@ -23,6 +23,15 @@ export const getPipelineById = async (id: string) => {
     return rows[0] ?? null
 }
 
+export const getPipelineBySourceKey = async (sourceKey: string) => {
+    const rows = await dbContext
+        .select()
+        .from(pipelines)
+        .where(eq(pipelines.sourceKey, sourceKey))
+        .limit(1)
+    return rows[0] ?? null
+}
+
 export const createPipeline = async (payload: PipelinePayload) => {
     const newPipeline: NewPipeline = {
         name: payload.name,

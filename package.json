@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx tsx src/app.ts",
-    "apply-schema": "npx drizzle-kit push"
+    "apply-schema": "npx drizzle-kit push",
+    "seed": "npx tsx src/seed.ts"
   },
   "keywords": [],
   "author": "",
