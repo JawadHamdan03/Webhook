@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "npx tsx src/index.ts",
+    "dev": "npx tsx src/app.ts",
     "apply-schema": "npx drizzle-kit push"
   },
   "keywords": [],
@@ -12,6 +12,7 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.3.5",
     "@types/pg": "^8.18.0",
     "drizzle-kit": "^0.31.9",
@@ -21,6 +22,7 @@
   "dependencies": {
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
     "pg": "^8.20.0"
   }
 }
