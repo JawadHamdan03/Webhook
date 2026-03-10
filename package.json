@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx tsx src/app.ts",
-    "apply-schema": "npx drizzle-kit push",
-    "seed": "npx tsx src/seed.ts"
+    "apply-schema": "printf \"y\\n\" | npx drizzle-kit push",
+    "seed": "npx tsx src/seed.ts",
+    "worker": "npx tsx src/worker.ts"
   },
   "keywords": [],
   "author": "",
