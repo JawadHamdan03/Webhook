@@ -1,19 +1,20 @@
 import { type Request, type Response } from "express"
 import { getDeliveriesByJobId, getJob, listJobsWithFilters } from "../services/jobsService.js"
+import { jobsQuerySchema } from "../validators/jobs.js"
 
 export const listJobs = async (req: Request, res: Response) => {
     const { status, pipelineId } = req.query
-    const filters: { status?: string; pipelineId?: string } = {}
+    const parsed = jobsQuerySchema.safeParse({
+        status: typeof status === "string" ? status : undefined,
+        pipelineId: typeof pipelineId === "string" ? pipelineId : undefined
+    })
 
-    if (typeof status === "string") {
-        filters.status = status
+    if (!parsed.success) {
+        res.status(400).json({ error: "invalid_request" })
+        return
     }
 
-    if (typeof pipelineId === "string") {
-        filters.pipelineId = pipelineId
-    }
-
-    const rows = await listJobsWithFilters(filters)
+    const rows = await listJobsWithFilters(parsed.data)
 
     res.status(200).json(rows)
 }

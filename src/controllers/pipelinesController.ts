@@ -7,6 +7,7 @@ import {
     updatePipeline as updatePipelineRecord,
     type PipelinePayload
 } from "../services/pipelinesService.js"
+import { pipelineCreateSchema, pipelineUpdateSchema } from "../validators/pipelines.js"
 
 export const getAll = async (_req: Request, res: Response) => {
     const rows = await listPipelines()
@@ -31,12 +32,13 @@ export const getById = async (req: Request, res: Response) => {
 }
 
 export const createPipeline = async (req: Request, res: Response) => {
-    const body = req.body as Partial<PipelinePayload>
-
-    if (!body?.name || !body?.actionType) {
-        res.status(400).json({ error: "invalid_request" })
+    const parsed = pipelineCreateSchema.safeParse(req.body)
+    if (!parsed.success) {
+        res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() })
         return
     }
+
+    const body = parsed.data as PipelinePayload
 
     const created = await createPipelineRecord({
         name: body.name,
@@ -50,17 +52,19 @@ export const createPipeline = async (req: Request, res: Response) => {
 
 export const updatePipeline = async (req: Request, res: Response) => {
     const idParam = req.params.id
-    const body = req.body as Partial<PipelinePayload>
+    const parsed = pipelineUpdateSchema.safeParse(req.body)
 
     if (!idParam || Array.isArray(idParam)) {
         res.status(400).json({ error: "invalid_request" })
         return
     }
 
-    if (!body || Object.keys(body).length === 0) {
+    if (!parsed.success) {
         res.status(400).json({ error: "invalid_request" })
         return
     }
+
+    const body = parsed.data as Partial<PipelinePayload>
 
     const pipeline = await updatePipelineRecord(idParam, body)
     if (!pipeline) {

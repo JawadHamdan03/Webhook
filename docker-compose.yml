@@ -12,7 +12,7 @@ services:
 
   init:
     build: .
-    command: sh -c "npm run apply-schema && npm run seed"
+    command: sh -c "until pg_isready -h db -U postgres; do echo 'waiting for db'; sleep 1; done; npm run apply-schema && npm run seed"
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/webhook
     depends_on:

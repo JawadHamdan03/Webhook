@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm"
 import dbContext from "../config/db/dbContext.js"
 import { deliveryAttempts, jobs } from "../config/db/schema.js"
+import { type z } from "zod"
+import { jobsQuerySchema } from "../validators/jobs.js"
 
 export type NewJobPayload = {
     pipelineId: string
@@ -20,7 +22,9 @@ export const createJob = async (payload: NewJobPayload) => {
     return rows[0]
 }
 
-export const listJobsWithFilters = async (filters: { status?: string; pipelineId?: string }) => {
+type JobsQuery = z.infer<typeof jobsQuerySchema>
+
+export const listJobsWithFilters = async (filters: JobsQuery) => {
     const clauses = [] as Array<ReturnType<typeof eq>>
 
     if (filters.status) {
