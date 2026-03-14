@@ -76,9 +76,14 @@ export const startWorker = async (pollIntervalMs = 1000) => {
         try {
             const job = await claimNextJob();
             if (job) {
-                const result = runProcessing(job.action_type, job.action_config, job.payload);
-                await markJobSuccess(job.id, result.output);
-                await createInitialDeliveryAttempts(job.id, job.pipeline_id);
+                try {
+                    const result = runProcessing(job.action_type, job.action_config, job.payload);
+                    await markJobSuccess(job.id, result.output);
+                    await createInitialDeliveryAttempts(job.id, job.pipeline_id);
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : "processing_failed";
+                    await markJobFailure(job.id, message);
+                }
                 continue;
             }
 

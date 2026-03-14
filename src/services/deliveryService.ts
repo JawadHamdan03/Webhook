@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import dbContext from "../config/db/dbContext.js";
-import { deliveryAttempts, jobs, subscribers } from "../config/db/schema.js";
+import { deliveryAttempts, subscribers } from "../config/db/schema.js";
 
 type DeliveryAttemptRow = {
     attempt_id: string;
@@ -136,12 +136,7 @@ export const deliverToSubscriber = async (targetUrl: string, payload: Record<str
         body: JSON.stringify(payload)
     });
 
-    let responseBody: string | null = null;
-    try {
-        responseBody = await response.text();
-    } catch {
-        responseBody = null;
-    }
+    const responseBody = await response.text().catch(() => null);
 
     return { response, responseBody };
 };
