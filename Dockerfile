@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN apk add --no-cache postgresql-client
 
+ENV JWT_SECRET=a-string-secret-at-least-256-bits-long
 COPY package*.json ./
 RUN npm ci
 
