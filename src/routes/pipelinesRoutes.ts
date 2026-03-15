@@ -6,7 +6,10 @@ import {
     getById,
     updatePipeline
 } from '../controllers/pipelinesController.js'
+import { jwtAuth } from '../middleware/apiKeyAuth.js'
 const router = Router()
+
+router.use(jwtAuth)
 
 router.get("/", getAll)
 router.get("/:id", getById)
