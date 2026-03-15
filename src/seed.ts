@@ -1,12 +1,20 @@
+import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import dbContext from "./config/db/dbContext.js";
-import { pipelines, subscribers } from "./config/db/schema.js";
+import { pipelines, subscribers, users } from "./config/db/schema.js";
 
 const makeSourceKey = () => `pl_${randomBytes(8).toString("hex")}`;
 
 const seed = async () => {
+    await dbContext.delete(users);
     await dbContext.delete(subscribers);
     await dbContext.delete(pipelines);
+
+    const defaultPassword = await bcrypt.hash("password123", 10);
+    await dbContext.insert(users).values({
+        email: "admin@example.com",
+        password: defaultPassword
+    });
 
     const createdPipelines = await dbContext
         .insert(pipelines)
@@ -48,6 +56,10 @@ const seed = async () => {
     ]);
 
     console.log("Seed complete", {
+        defaultUser: {
+            email: "admin@example.com",
+            password: "password123"
+        },
         pipelines: createdPipelines.map((pipeline) => ({
             id: pipeline.id,
             sourceKey: pipeline.sourceKey,
