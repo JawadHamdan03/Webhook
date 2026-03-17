@@ -11,7 +11,9 @@ services:
       - db_data:/var/lib/postgresql/data
 
   init:
-    build: .
+    build:
+      context: ./API
+      dockerfile: Dockerfile
     command: sh -c "until pg_isready -h db -U postgres; do echo 'waiting for db'; sleep 1; done; npm run apply-schema && npm run seed"
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/webhook
@@ -19,7 +21,9 @@ services:
       - db
 
   api:
-    build: .
+    build:
+      context: ./API
+      dockerfile: Dockerfile
     command: npm run dev
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/webhook
@@ -31,7 +35,9 @@ services:
         condition: service_completed_successfully
 
   worker:
-    build: .
+    build:
+      context: ./API
+      dockerfile: Dockerfile
     command: npm run worker
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/webhook
