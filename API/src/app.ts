@@ -1,3 +1,4 @@
+import cors from 'cors'
 import express from 'express'
 import pipelinesRoutes from './routes/pipelinesRoutes.js'
 import webhooksRoutes from './routes/webhooksRoutes.js'
@@ -6,6 +7,7 @@ import authRoutes from './routes/authRoutes.js'
 
 const app = express()
 
+app.use(cors())
 app.use(express.json())
 
 app.use("/auth", authRoutes)
