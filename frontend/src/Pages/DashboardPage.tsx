@@ -1,4 +1,4 @@
-import { API_BASE_URL, type Job, type Pipeline } from '../lib/api'
+import { type Job, type Pipeline } from '../lib/api'
 import { InfoCard } from '../Components/InfoCard'
 import { JobCard } from '../Components/JobCard'
 import { PipelineCard } from '../Components/PipelineCard'

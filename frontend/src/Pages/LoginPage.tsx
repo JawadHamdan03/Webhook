@@ -1,5 +1,4 @@
 import { type FormEvent } from 'react'
-import { API_BASE_URL } from '../lib/api'
 import { LoginFeatureCard } from '../Components/LoginFeatureCard'
 
 type LoginPageProps = {
