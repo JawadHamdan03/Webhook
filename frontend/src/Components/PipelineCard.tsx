@@ -1,10 +1,23 @@
-import type { Pipeline } from '../lib/api'
+import type { Pipeline, Subscriber } from '../lib/api'
+import { SubscriberManager } from './SubscriberManager'
 
 type PipelineCardProps = {
+    isSubscriberSubmitting: boolean
+    onCreateSubscriber: (targetUrl: string) => Promise<void>
+    onDeleteSubscriber: (subscriberId: string) => Promise<void>
+    onUpdateSubscriber: (subscriberId: string, targetUrl: string) => Promise<void>
     pipeline: Pipeline
+    subscribers: Subscriber[]
 }
 
-export const PipelineCard = ({ pipeline }: PipelineCardProps) => {
+export const PipelineCard = ({
+    isSubscriberSubmitting,
+    onCreateSubscriber,
+    onDeleteSubscriber,
+    onUpdateSubscriber,
+    pipeline,
+    subscribers
+}: PipelineCardProps) => {
     return (
         <article className="rounded-3xl border border-slate-200 p-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -17,6 +30,13 @@ export const PipelineCard = ({ pipeline }: PipelineCardProps) => {
             <pre className="mt-4 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-xs leading-6 text-emerald-200">
                 <code>{JSON.stringify(pipeline.actionConfig, null, 2)}</code>
             </pre>
+            <SubscriberManager
+                isSubmitting={isSubscriberSubmitting}
+                onCreateSubscriber={onCreateSubscriber}
+                onDeleteSubscriber={onDeleteSubscriber}
+                onUpdateSubscriber={onUpdateSubscriber}
+                subscribers={subscribers}
+            />
         </article>
     )
 }

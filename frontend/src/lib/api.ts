@@ -41,6 +41,14 @@ export type Pipeline = {
     updatedAt?: string
 }
 
+export type Subscriber = {
+    id: string
+    pipelineId: string
+    targetUrl: string
+    createdAt?: string
+    updatedAt?: string
+}
+
 export type Job = {
     id: string
     pipelineId: string
@@ -112,6 +120,33 @@ export const sendTestWebhook = (sourceKey: string, payload: Record<string, unkno
 
 export const getPipelineById = (id: string, token: string) => {
     return request<Pipeline>(`/pipelines/${id}`, { token })
+}
+
+export const getSubscribersByPipelineId = (pipelineId: string, token: string) => {
+    return request<Subscriber[]>(`/pipelines/${pipelineId}/subscribers`, { token })
+}
+
+export const createSubscriber = (pipelineId: string, targetUrl: string, token: string) => {
+    return request<Subscriber>(`/pipelines/${pipelineId}/subscribers`, {
+        method: 'POST',
+        body: { targetUrl },
+        token
+    })
+}
+
+export const updateSubscriber = (subscriberId: string, targetUrl: string, token: string) => {
+    return request<Subscriber>(`/pipelines/subscribers/${subscriberId}`, {
+        method: 'PUT',
+        body: { targetUrl },
+        token
+    })
+}
+
+export const deleteSubscriber = (subscriberId: string, token: string) => {
+    return request<void>(`/pipelines/subscribers/${subscriberId}`, {
+        method: 'DELETE',
+        token
+    })
 }
 
 export const createPipeline = (

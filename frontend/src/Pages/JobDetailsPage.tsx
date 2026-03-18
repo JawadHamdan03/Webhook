@@ -1,13 +1,15 @@
-import type { DeliveryAttempt, Job, Pipeline } from '../lib/api'
+import type { DeliveryAttempt, Job, Pipeline, Subscriber } from '../lib/api'
 import { InfoCard } from '../Components/InfoCard'
 
 type JobDetailsPageProps = {
     deliveries: DeliveryAttempt[]
     error: string | null
     isLoading: boolean
+    isLiveUpdating: boolean
     job: Job | null
     onBack: () => void
     pipeline: Pipeline | null
+    subscribers: Subscriber[]
 }
 
 const formatDate = (value?: string | null) => {
@@ -27,7 +29,34 @@ const renderJson = (value: unknown) => {
     return JSON.stringify(value, null, 2)
 }
 
-export const JobDetailsPage = ({ deliveries, error, isLoading, job, onBack, pipeline }: JobDetailsPageProps) => {
+export const JobDetailsPage = ({ deliveries, error, isLoading, isLiveUpdating, job, onBack, pipeline, subscribers }: JobDetailsPageProps) => {
+    const deliveriesBySubscriber = subscribers
+        .map((subscriber) => ({
+            subscriber,
+            attempts: deliveries
+                .filter((delivery) => delivery.subscriberId === subscriber.id)
+                .sort((left, right) => right.attemptNumber - left.attemptNumber)
+        }))
+        .filter((entry) => entry.attempts.length > 0)
+
+    const unknownSubscriberAttempts = deliveries
+        .filter((delivery) => !subscribers.some((subscriber) => subscriber.id === delivery.subscriberId))
+        .sort((left, right) => right.attemptNumber - left.attemptNumber)
+
+    const deliverySummary = deliveriesBySubscriber.reduce(
+        (summary, entry) => {
+            const latestAttempt = entry.attempts[0]
+
+            if (!latestAttempt) {
+                return summary
+            }
+
+            summary[latestAttempt.status] += 1
+            return summary
+        },
+        { failed: 0, pending: 0, success: 0 }
+    )
+
     return (
         <div className="min-h-screen bg-slate-100 px-6 py-8 text-slate-900">
             <div className="mx-auto max-w-7xl space-y-8">
@@ -47,6 +76,11 @@ export const JobDetailsPage = ({ deliveries, error, isLoading, job, onBack, pipe
                         <span className="rounded-full bg-teal-100 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-teal-700">
                             {job?.status ?? 'loading'}
                         </span>
+                        {isLiveUpdating ? (
+                            <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-700">
+                                Live updates on
+                            </span>
+                        ) : null}
                     </div>
                 </header>
 
@@ -73,9 +107,9 @@ export const JobDetailsPage = ({ deliveries, error, isLoading, job, onBack, pipe
                         description="Subscriber delivery records"
                     />
                     <InfoCard
-                        title="Processed"
-                        value={job?.processedAt ? 'Yes' : 'No'}
-                        description="Whether the worker finished processing"
+                        title="Subscribers"
+                        value={String(deliveriesBySubscriber.length)}
+                        description="Subscribers with delivery history"
                     />
                 </section>
 
@@ -103,43 +137,101 @@ export const JobDetailsPage = ({ deliveries, error, isLoading, job, onBack, pipe
                             </div>
 
                             <div className="rounded-4xl bg-white p-6 shadow-sm">
-                                <h2 className="text-2xl font-semibold">Delivery attempts</h2>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-semibold">Deliveries by subscriber</h2>
+                                        <p className="mt-1 text-sm text-slate-600">
+                                            Latest delivery status is shown first for each subscriber.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-700">
+                                        <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700">
+                                            Success {deliverySummary.success}
+                                        </span>
+                                        <span className="rounded-full bg-amber-50 px-3 py-2 text-amber-700">
+                                            Pending {deliverySummary.pending}
+                                        </span>
+                                        <span className="rounded-full bg-rose-50 px-3 py-2 text-rose-700">
+                                            Failed {deliverySummary.failed}
+                                        </span>
+                                    </div>
+                                </div>
                                 <div className="mt-6 space-y-4">
-                                    {deliveries.length === 0 ? (
+                                    {deliveriesBySubscriber.length === 0 && unknownSubscriberAttempts.length === 0 ? (
                                         <div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
                                             No delivery attempts recorded for this job.
                                         </div>
-                                    ) : (
-                                        deliveries.map((delivery) => (
-                                            <article key={delivery.id} className="rounded-3xl border border-slate-200 p-5">
+                                    ) : null}
+
+                                    {deliveriesBySubscriber.map(({ subscriber, attempts }) => {
+                                        const latestAttempt = attempts[0]
+
+                                        return (
+                                            <article key={subscriber.id} className="rounded-3xl border border-slate-200 p-5">
                                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                                     <div>
-                                                        <h3 className="text-lg font-semibold">Attempt {delivery.attemptNumber}</h3>
-                                                        <p className="mt-1 font-mono text-xs text-slate-500">Subscriber {delivery.subscriberId}</p>
+                                                        <h3 className="text-lg font-semibold">{subscriber.targetUrl}</h3>
+                                                        <p className="mt-1 font-mono text-xs text-slate-500">Subscriber {subscriber.id}</p>
                                                     </div>
                                                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
-                                                        {delivery.status}
+                                                        {latestAttempt?.status ?? 'unknown'}
                                                     </span>
                                                 </div>
-                                                <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                                                    <p>HTTP status: {delivery.responseStatus ?? 'N/A'}</p>
-                                                    <p>Retry at: {formatDate(delivery.nextRetryAt)}</p>
-                                                    <p>Created: {formatDate(delivery.createdAt)}</p>
-                                                    <p>Updated: {formatDate(delivery.updatedAt)}</p>
+                                                <div className="mt-4 space-y-3">
+                                                    {attempts.map((delivery) => (
+                                                        <div key={delivery.id} className="rounded-2xl bg-slate-50 p-4">
+                                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                <p className="text-sm font-semibold text-slate-900">Attempt {delivery.attemptNumber}</p>
+                                                                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
+                                                                    {delivery.status}
+                                                                </span>
+                                                            </div>
+                                                            <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                                                <p>HTTP status: {delivery.responseStatus ?? 'N/A'}</p>
+                                                                <p>Retry at: {formatDate(delivery.nextRetryAt)}</p>
+                                                                <p>Created: {formatDate(delivery.createdAt)}</p>
+                                                                <p>Updated: {formatDate(delivery.updatedAt)}</p>
+                                                            </div>
+                                                            {delivery.errorMessage ? (
+                                                                <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                                                                    {delivery.errorMessage}
+                                                                </div>
+                                                            ) : null}
+                                                            {delivery.responseBody ? (
+                                                                <pre className="mt-3 overflow-x-auto rounded-2xl bg-white p-4 text-xs leading-6 text-slate-700">
+                                                                    <code>{delivery.responseBody}</code>
+                                                                </pre>
+                                                            ) : null}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                                {delivery.errorMessage ? (
-                                                    <div className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                                                        {delivery.errorMessage}
-                                                    </div>
-                                                ) : null}
-                                                {delivery.responseBody ? (
-                                                    <pre className="mt-4 overflow-x-auto rounded-2xl bg-slate-100 p-4 text-xs leading-6 text-slate-700">
-                                                        <code>{delivery.responseBody}</code>
-                                                    </pre>
-                                                ) : null}
                                             </article>
-                                        ))
-                                    )}
+                                        )
+                                    })}
+
+                                    {unknownSubscriberAttempts.length > 0 ? (
+                                        <article className="rounded-3xl border border-slate-200 p-5">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-semibold">Unknown subscriber</h3>
+                                                    <p className="mt-1 text-sm text-slate-500">These attempts reference subscribers not loaded in the current pipeline state.</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 space-y-3">
+                                                {unknownSubscriberAttempts.map((delivery) => (
+                                                    <div key={delivery.id} className="rounded-2xl bg-slate-50 p-4">
+                                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                                            <p className="text-sm font-semibold text-slate-900">Attempt {delivery.attemptNumber}</p>
+                                                            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
+                                                                {delivery.status}
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-2 font-mono text-xs text-slate-500">Subscriber {delivery.subscriberId}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </article>
+                                    ) : null}
                                 </div>
                             </div>
                         </section>

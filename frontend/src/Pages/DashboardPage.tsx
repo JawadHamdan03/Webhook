@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react'
-import { type Job, type Pipeline } from '../lib/api'
+import { type Job, type Pipeline, type Subscriber } from '../lib/api'
 import { InfoCard } from '../Components/InfoCard'
 import { JobCard } from '../Components/JobCard'
 import { PipelineCard } from '../Components/PipelineCard'
@@ -7,17 +7,26 @@ import { PipelineForm, type PipelineFormData } from '../Components/PipelineForm'
 import { WebhookTester } from '../Components/WebhookTester'
 
 type DashboardPageProps = {
+    createdJobId: string | null
+    createdJobStatus: Job['status'] | null
     error: string | null
+    isPollingCreatedJob: boolean
     isLoadingData: boolean
+    isSubscriberSubmittingByPipeline: Record<string, boolean>
     jobs: Job[]
     jobsByStatus: Record<string, number>
     onLogout: () => void
     onOpenJobDetails: (jobId: string) => void
     pipelines: Pipeline[]
+    pipelineSubscribers: Record<string, Subscriber[]>
     onSendWebhookTest: (sourceKey: string, payload: Record<string, unknown>) => Promise<void>
+    onViewCreatedJob: (jobId: string) => void
     onCreatePipeline: (data: PipelineFormData) => Promise<void>
+    onCreateSubscriber: (pipelineId: string, targetUrl: string) => Promise<void>
     onUpdatePipeline: (data: PipelineFormData) => Promise<void>
+    onUpdateSubscriber: (pipelineId: string, subscriberId: string, targetUrl: string) => Promise<void>
     onDeletePipeline: (id: string) => Promise<void>
+    onDeleteSubscriber: (pipelineId: string, subscriberId: string) => Promise<void>
     onOpenCreateModal: () => void
     onOpenEditModal: (pipeline: Pipeline) => void
     onCloseModal: () => void
@@ -31,17 +40,26 @@ type DashboardPageProps = {
 }
 
 export const DashboardPage = ({
+    createdJobId,
+    createdJobStatus,
     error,
+    isPollingCreatedJob,
     isLoadingData,
+    isSubscriberSubmittingByPipeline,
     jobs,
     jobsByStatus,
     onLogout,
     onOpenJobDetails,
     pipelines,
+    pipelineSubscribers,
     onSendWebhookTest,
+    onViewCreatedJob,
     onCreatePipeline,
+    onCreateSubscriber,
     onUpdatePipeline,
+    onUpdateSubscriber,
     onDeletePipeline,
+    onDeleteSubscriber,
     onOpenCreateModal,
     onOpenEditModal,
     onCloseModal,
@@ -118,9 +136,13 @@ export const DashboardPage = ({
                     </section>
 
                     <WebhookTester
+                        createdJobId={createdJobId}
+                        createdJobStatus={createdJobStatus}
                         error={webhookTestError}
+                        isPollingCreatedJob={isPollingCreatedJob}
                         isSubmitting={isSendingWebhookTest}
                         onSubmit={onSendWebhookTest}
+                        onViewCreatedJob={onViewCreatedJob}
                         pipelines={pipelines}
                         success={webhookTestSuccess}
                     />
@@ -143,7 +165,14 @@ export const DashboardPage = ({
                                 {pipelines.map((pipeline) => (
                                     <div key={pipeline.id} className="flex gap-2">
                                         <div className="flex-1">
-                                            <PipelineCard pipeline={pipeline} />
+                                            <PipelineCard
+                                                isSubscriberSubmitting={Boolean(isSubscriberSubmittingByPipeline[pipeline.id])}
+                                                onCreateSubscriber={(targetUrl) => onCreateSubscriber(pipeline.id, targetUrl)}
+                                                onDeleteSubscriber={(subscriberId) => onDeleteSubscriber(pipeline.id, subscriberId)}
+                                                onUpdateSubscriber={(subscriberId, targetUrl) => onUpdateSubscriber(pipeline.id, subscriberId, targetUrl)}
+                                                pipeline={pipeline}
+                                                subscribers={pipelineSubscribers[pipeline.id] ?? []}
+                                            />
                                         </div>
                                         <div className="flex gap-1">
                                             <button

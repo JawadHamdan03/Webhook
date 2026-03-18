@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import type { Pipeline } from '../lib/api'
+import type { Job, Pipeline } from '../lib/api'
 
 type WebhookTesterProps = {
+    createdJobId: string | null
+    createdJobStatus: Job['status'] | null
     error: string | null
+    isPollingCreatedJob: boolean
     isSubmitting: boolean
     onSubmit: (sourceKey: string, payload: Record<string, unknown>) => Promise<void>
+    onViewCreatedJob: (jobId: string) => void
     pipelines: Pipeline[]
     success: string | null
 }
@@ -16,7 +20,25 @@ const defaultPayload = `{
   "currency": "USD"
 }`
 
-export const WebhookTester = ({ error, isSubmitting, onSubmit, pipelines, success }: WebhookTesterProps) => {
+const formatStatusLabel = (status: Job['status'] | null) => {
+    if (!status) {
+        return 'Unknown'
+    }
+
+    return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
+export const WebhookTester = ({
+    createdJobId,
+    createdJobStatus,
+    error,
+    isPollingCreatedJob,
+    isSubmitting,
+    onSubmit,
+    onViewCreatedJob,
+    pipelines,
+    success
+}: WebhookTesterProps) => {
     const [selectedSourceKey, setSelectedSourceKey] = useState('')
     const [payloadText, setPayloadText] = useState(defaultPayload)
     const [localError, setLocalError] = useState<string | null>(null)
@@ -104,7 +126,31 @@ export const WebhookTester = ({ error, isSubmitting, onSubmit, pipelines, succes
 
                 {success ? (
                     <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                        {success}
+                        <p>{success}</p>
+                        {createdJobId ? (
+                            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-emerald-800">
+                                    <span className="rounded-full bg-white/80 px-3 py-1">
+                                        Job {createdJobId}
+                                    </span>
+                                    <span className="rounded-full bg-white/80 px-3 py-1">
+                                        Status {formatStatusLabel(createdJobStatus)}
+                                    </span>
+                                    {isPollingCreatedJob ? (
+                                        <span className="rounded-full bg-white/80 px-3 py-1">
+                                            Refreshing live
+                                        </span>
+                                    ) : null}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => onViewCreatedJob(createdJobId)}
+                                    className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-medium uppercase tracking-[0.12em] text-white"
+                                >
+                                    View created job
+                                </button>
+                            </div>
+                        ) : null}
                     </div>
                 ) : null}
 
