@@ -48,8 +48,29 @@ export type Job = {
     payload: Record<string, unknown>
     processedOutput?: Record<string, unknown> | null
     errorMessage?: string | null
+    attemptCount?: number
+    createdAt?: string
+    processedAt?: string | null
+    updatedAt?: string
+}
+
+export type DeliveryAttempt = {
+    id: string
+    jobId: string
+    subscriberId: string
+    attemptNumber: number
+    status: 'pending' | 'success' | 'failed'
+    responseStatus?: number | null
+    responseBody?: string | null
+    errorMessage?: string | null
+    nextRetryAt?: string | null
     createdAt?: string
     updatedAt?: string
+}
+
+export type WebhookAcceptedResponse = {
+    accepted: boolean
+    jobId: string
 }
 
 export const login = (email: string, password: string) => {
@@ -72,6 +93,21 @@ export const getPipelines = (token: string) => {
 
 export const getJobs = (token: string) => {
     return request<Job[]>('/jobs', { token })
+}
+
+export const getJobById = (id: string, token?: string) => {
+    return request<Job>(`/jobs/${id}`, { token })
+}
+
+export const getJobDeliveries = (id: string, token?: string) => {
+    return request<DeliveryAttempt[]>(`/jobs/${id}/deliveries`, { token })
+}
+
+export const sendTestWebhook = (sourceKey: string, payload: Record<string, unknown>) => {
+    return request<WebhookAcceptedResponse>(`/webhooks/${sourceKey}`, {
+        method: 'POST',
+        body: payload
+    })
 }
 
 export const getPipelineById = (id: string, token: string) => {

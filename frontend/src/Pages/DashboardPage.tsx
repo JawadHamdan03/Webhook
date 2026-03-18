@@ -1,8 +1,10 @@
+import { useDeferredValue, useState } from 'react'
 import { type Job, type Pipeline } from '../lib/api'
 import { InfoCard } from '../Components/InfoCard'
 import { JobCard } from '../Components/JobCard'
 import { PipelineCard } from '../Components/PipelineCard'
 import { PipelineForm, type PipelineFormData } from '../Components/PipelineForm'
+import { WebhookTester } from '../Components/WebhookTester'
 
 type DashboardPageProps = {
     error: string | null
@@ -10,7 +12,9 @@ type DashboardPageProps = {
     jobs: Job[]
     jobsByStatus: Record<string, number>
     onLogout: () => void
+    onOpenJobDetails: (jobId: string) => void
     pipelines: Pipeline[]
+    onSendWebhookTest: (sourceKey: string, payload: Record<string, unknown>) => Promise<void>
     onCreatePipeline: (data: PipelineFormData) => Promise<void>
     onUpdatePipeline: (data: PipelineFormData) => Promise<void>
     onDeletePipeline: (id: string) => Promise<void>
@@ -18,6 +22,9 @@ type DashboardPageProps = {
     onOpenEditModal: (pipeline: Pipeline) => void
     onCloseModal: () => void
     showPipelineModal: boolean
+    webhookTestError: string | null
+    webhookTestSuccess: string | null
+    isSendingWebhookTest: boolean
     editingPipeline: Pipeline | null
     pipelineError: string | null
     isPipelineSubmitting: boolean
@@ -29,7 +36,9 @@ export const DashboardPage = ({
     jobs,
     jobsByStatus,
     onLogout,
+    onOpenJobDetails,
     pipelines,
+    onSendWebhookTest,
     onCreatePipeline,
     onUpdatePipeline,
     onDeletePipeline,
@@ -37,10 +46,47 @@ export const DashboardPage = ({
     onOpenEditModal,
     onCloseModal,
     showPipelineModal,
+    webhookTestError,
+    webhookTestSuccess,
+    isSendingWebhookTest,
     editingPipeline,
     pipelineError,
     isPipelineSubmitting
 }: DashboardPageProps) => {
+    const [jobSearch, setJobSearch] = useState('')
+    const [jobStatusFilter, setJobStatusFilter] = useState<'all' | Job['status']>('all')
+    const [jobPipelineFilter, setJobPipelineFilter] = useState<'all' | string>('all')
+
+    const deferredJobSearch = useDeferredValue(jobSearch.trim().toLowerCase())
+
+    const filteredJobs = jobs.filter((job) => {
+        const matchesStatus = jobStatusFilter === 'all' || job.status === jobStatusFilter
+        const matchesPipeline = jobPipelineFilter === 'all' || job.pipelineId === jobPipelineFilter
+
+        if (!matchesStatus || !matchesPipeline) {
+            return false
+        }
+
+        if (!deferredJobSearch) {
+            return true
+        }
+
+        const searchableText = [
+            job.id,
+            job.pipelineId,
+            job.status,
+            job.errorMessage ?? '',
+            JSON.stringify(job.payload),
+            JSON.stringify(job.processedOutput ?? {})
+        ]
+            .join(' ')
+            .toLowerCase()
+
+        return searchableText.includes(deferredJobSearch)
+    })
+
+    const hasActiveJobFilters = deferredJobSearch.length > 0 || jobStatusFilter !== 'all' || jobPipelineFilter !== 'all'
+
     return (
         <>
             <div className="min-h-screen bg-slate-100 px-6 py-8 text-slate-900">
@@ -70,6 +116,14 @@ export const DashboardPage = ({
                         <InfoCard title="Completed" value={String(jobsByStatus.completed ?? 0)} description="Jobs marked completed" />
                         <InfoCard title="Pending" value={String(jobsByStatus.pending ?? 0)} description="Jobs waiting on worker progress" />
                     </section>
+
+                    <WebhookTester
+                        error={webhookTestError}
+                        isSubmitting={isSendingWebhookTest}
+                        onSubmit={onSendWebhookTest}
+                        pipelines={pipelines}
+                        success={webhookTestSuccess}
+                    />
 
                     <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
                         <section className="rounded-4xl bg-white p-6 shadow-sm">
@@ -117,16 +171,93 @@ export const DashboardPage = ({
                         </section>
 
                         <section className="rounded-4xl bg-white p-6 shadow-sm">
-                            <h2 className="text-2xl font-semibold">Recent jobs</h2>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <h2 className="text-2xl font-semibold">Jobs</h2>
+                                    <p className="mt-1 text-sm text-slate-600">
+                                        Showing {filteredJobs.length} of {jobs.length} jobs
+                                    </p>
+                                </div>
+
+                                {hasActiveJobFilters ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setJobSearch('')
+                                            setJobStatusFilter('all')
+                                            setJobPipelineFilter('all')
+                                        }}
+                                        className="rounded-full border border-slate-300 px-4 py-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-700"
+                                    >
+                                        Clear filters
+                                    </button>
+                                ) : null}
+                            </div>
+
+                            <div className="mt-6 grid gap-3 md:grid-cols-[1.4fr_0.8fr_1fr]">
+                                <label className="block">
+                                    <span className="mb-1 block text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                                        Search
+                                    </span>
+                                    <input
+                                        type="search"
+                                        value={jobSearch}
+                                        onChange={(event) => setJobSearch(event.target.value)}
+                                        placeholder="Search by job id, payload, status, or error"
+                                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                                    />
+                                </label>
+
+                                <label className="block">
+                                    <span className="mb-1 block text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                                        Status
+                                    </span>
+                                    <select
+                                        value={jobStatusFilter}
+                                        onChange={(event) => setJobStatusFilter(event.target.value as 'all' | Job['status'])}
+                                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                                    >
+                                        <option value="all">All statuses</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="failed">Failed</option>
+                                    </select>
+                                </label>
+
+                                <label className="block">
+                                    <span className="mb-1 block text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                                        Pipeline
+                                    </span>
+                                    <select
+                                        value={jobPipelineFilter}
+                                        onChange={(event) => setJobPipelineFilter(event.target.value)}
+                                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                                    >
+                                        <option value="all">All pipelines</option>
+                                        {pipelines.map((pipeline) => (
+                                            <option key={pipeline.id} value={pipeline.id}>
+                                                {pipeline.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
 
                             <div className="mt-6 space-y-4">
-                                {jobs.slice(0, 8).map((job) => (
-                                    <JobCard key={job.id} job={job} />
+                                {filteredJobs.map((job) => (
+                                    <JobCard key={job.id} job={job} onSelect={onOpenJobDetails} />
                                 ))}
 
                                 {!isLoadingData && jobs.length === 0 ? (
                                     <div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
                                         No jobs returned by the backend.
+                                    </div>
+                                ) : null}
+
+                                {!isLoadingData && jobs.length > 0 && filteredJobs.length === 0 ? (
+                                    <div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                                        No jobs match the current search and filters.
                                     </div>
                                 ) : null}
                             </div>

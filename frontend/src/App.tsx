@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
+  getJobById,
+  getJobDeliveries,
   getJobs,
   getPipelines,
   login,
@@ -7,12 +9,15 @@ import {
   createPipeline,
   updatePipeline,
   deletePipeline,
+  sendTestWebhook,
+  type DeliveryAttempt,
   type Job,
   type Pipeline
 } from './lib/api'
 import { getErrorMessage } from './lib/errorMessages.ts'
 import { clearStoredToken, getStoredToken, setStoredToken } from './lib/storage'
 import { DashboardPage } from './Pages/DashboardPage'
+import { JobDetailsPage } from './Pages/JobDetailsPage'
 import { LoginPage } from './Pages/LoginPage'
 import { RegisterPage } from './Pages/RegisterPage'
 
@@ -38,6 +43,14 @@ const App = () => {
   const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null)
   const [pipelineError, setPipelineError] = useState<string | null>(null)
   const [isPipelineSubmitting, setIsPipelineSubmitting] = useState(false)
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [jobDeliveries, setJobDeliveries] = useState<DeliveryAttempt[]>([])
+  const [jobDetailsError, setJobDetailsError] = useState<string | null>(null)
+  const [isLoadingJobDetails, setIsLoadingJobDetails] = useState(false)
+  const [webhookTestError, setWebhookTestError] = useState<string | null>(null)
+  const [webhookTestSuccess, setWebhookTestSuccess] = useState<string | null>(null)
+  const [isSendingWebhookTest, setIsSendingWebhookTest] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -85,6 +98,54 @@ const App = () => {
     }
   }, [token])
 
+  useEffect(() => {
+    if (!selectedJobId) {
+      setSelectedJob(null)
+      setJobDeliveries([])
+      setJobDetailsError(null)
+      setIsLoadingJobDetails(false)
+      return
+    }
+
+    let isActive = true
+
+    const loadJobDetails = async () => {
+      setIsLoadingJobDetails(true)
+      setJobDetailsError(null)
+
+      try {
+        const [jobDetails, deliveries] = await Promise.all([
+          getJobById(selectedJobId, token ?? undefined),
+          getJobDeliveries(selectedJobId, token ?? undefined)
+        ])
+
+        if (!isActive) {
+          return
+        }
+
+        setSelectedJob(jobDetails)
+        setJobDeliveries(deliveries)
+      } catch (detailsError) {
+        if (!isActive) {
+          return
+        }
+
+        const errorCode = detailsError instanceof Error ? detailsError.message : 'request_failed'
+        setJobDetailsError(getErrorMessage(errorCode))
+      } finally {
+        if (isActive) {
+          setIsLoadingJobDetails(false)
+        }
+      }
+    }
+
+    void loadJobDetails()
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedJobId, token])
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSubmitting(true)
@@ -131,6 +192,10 @@ const App = () => {
     clearStoredToken()
     setToken(null)
     setError(null)
+    setSelectedJobId(null)
+    setSelectedJob(null)
+    setJobDeliveries([])
+    setJobDetailsError(null)
   }
 
   const handleShowRegister = () => {
@@ -240,10 +305,47 @@ const App = () => {
     setPipelineError(null)
   }
 
+  const handleOpenJobDetails = (jobId: string) => {
+    setSelectedJobId(jobId)
+  }
+
+  const handleCloseJobDetails = () => {
+    setSelectedJobId(null)
+    setSelectedJob(null)
+    setJobDeliveries([])
+    setJobDetailsError(null)
+  }
+
+  const handleSendWebhookTest = async (sourceKey: string, payload: Record<string, unknown>) => {
+    if (!token) {
+      return
+    }
+
+    setWebhookTestError(null)
+    setWebhookTestSuccess(null)
+    setIsSendingWebhookTest(true)
+
+    try {
+      const response = await sendTestWebhook(sourceKey, payload)
+      const refreshedJobs = await getJobs(token)
+
+      setJobs(refreshedJobs)
+      setWebhookTestSuccess(`Webhook accepted. Job ${response.jobId} was created.`)
+    } catch (sendError) {
+      const errorCode = sendError instanceof Error ? sendError.message : 'request_failed'
+      setWebhookTestError(getErrorMessage(errorCode))
+    } finally {
+      setIsSendingWebhookTest(false)
+    }
+  }
+
   const jobsByStatus = jobs.reduce<Record<string, number>>((acc, job) => {
     acc[job.status] = (acc[job.status] ?? 0) + 1
     return acc
   }, {})
+
+  const currentJob = selectedJob ?? (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null)
+  const currentPipeline = currentJob ? pipelines.find(pipeline => pipeline.id === currentJob.pipelineId) ?? null : null
 
   if (!token) {
     if (authView === 'register') {
@@ -277,6 +379,19 @@ const App = () => {
     )
   }
 
+  if (selectedJobId) {
+    return (
+      <JobDetailsPage
+        deliveries={jobDeliveries}
+        error={jobDetailsError}
+        isLoading={isLoadingJobDetails}
+        job={currentJob}
+        onBack={handleCloseJobDetails}
+        pipeline={currentPipeline}
+      />
+    )
+  }
+
   return (
     <DashboardPage
       error={error}
@@ -284,13 +399,18 @@ const App = () => {
       jobs={jobs}
       jobsByStatus={jobsByStatus}
       onLogout={handleLogout}
+      onOpenJobDetails={handleOpenJobDetails}
       pipelines={pipelines}
+      onSendWebhookTest={handleSendWebhookTest}
       onCreatePipeline={handleCreatePipeline}
       onUpdatePipeline={handleUpdatePipeline}
       onDeletePipeline={handleDeletePipeline}
       onOpenCreateModal={handleOpenCreateModal}
       onOpenEditModal={handleOpenEditModal}
       onCloseModal={handleCloseModal}
+      webhookTestError={webhookTestError}
+      webhookTestSuccess={webhookTestSuccess}
+      isSendingWebhookTest={isSendingWebhookTest}
       showPipelineModal={showPipelineModal}
       editingPipeline={editingPipeline}
       pipelineError={pipelineError}
