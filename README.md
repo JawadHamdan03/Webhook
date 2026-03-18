@@ -1,5 +1,7 @@
 # Webhook Processing Platform
 
+[![CI](https://github.com/JawadHamdan03/Weebhook/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JawadHamdan03/Weebhook/actions/workflows/ci.yml)
+
 A full-stack webhook processing platform that accepts incoming webhooks, runs configurable transformation pipelines, and delivers processed payloads to registered subscribers.
 
 ## Overview
