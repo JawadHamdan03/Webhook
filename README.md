@@ -1,6 +1,9 @@
 # Webhook Processing Platform
 
 [![CI](https://github.com/JawadHamdan03/Weebhook/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JawadHamdan03/Weebhook/actions/workflows/ci.yml)
+[![Node 20](https://img.shields.io/badge/node-20.x-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Docker Compose](https://img.shields.io/badge/docker-compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 A full-stack webhook processing platform that accepts incoming webhooks, runs configurable transformation pipelines, and delivers processed payloads to registered subscribers.
 
