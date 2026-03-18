@@ -70,8 +70,42 @@ export const getPipelines = (token: string) => {
     return request<Pipeline[]>('/pipelines', { token })
 }
 
-export const getJobs = () => {
-    return request<Job[]>('/jobs')
+export const getJobs = (token: string) => {
+    return request<Job[]>('/jobs', { token })
+}
+
+export const getPipelineById = (id: string, token: string) => {
+    return request<Pipeline>(`/pipelines/${id}`, { token })
+}
+
+export const createPipeline = (
+    payload: Pick<Pipeline, 'name' | 'actionType' | 'actionConfig'> & { sourceKey?: string },
+    token: string
+) => {
+    return request<Pipeline>('/pipelines', {
+        method: 'POST',
+        body: payload,
+        token
+    })
+}
+
+export const updatePipeline = (
+    id: string,
+    payload: Partial<Pick<Pipeline, 'name' | 'actionType' | 'actionConfig'>>,
+    token: string
+) => {
+    return request<Pipeline>(`/pipelines/${id}`, {
+        method: 'PUT',
+        body: payload,
+        token
+    })
+}
+
+export const deletePipeline = (id: string, token: string) => {
+    return request<void>(`/pipelines/${id}`, {
+        method: 'DELETE',
+        token
+    })
 }
 
 export { API_BASE_URL }

@@ -1,6 +1,4 @@
 import { type FormEvent } from 'react'
-import { API_BASE_URL } from '../lib/api'
-import { LoginFeatureCard } from '../Components/LoginFeatureCard'
 
 type RegisterPageProps = {
     confirmPassword: string
@@ -33,30 +31,11 @@ export const RegisterPage = ({
                 <section>
                     <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-300">Webhook Platform</p>
                     <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl">
-                        Create an operator account and start consuming the backend immediately.
+                        Create an operator account and start.
                     </h1>
-                    <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300">
-                        Registration calls <span className="font-mono text-teal-200">{API_BASE_URL}/auth/register</span>.
-                        On success, the backend returns a JWT and the frontend logs the user in automatically.
-                    </p>
 
-                    <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                        <LoginFeatureCard
-                            title="Register"
-                            value="Instant token"
-                            description="The backend returns a JWT right after account creation."
-                        />
-                        <LoginFeatureCard
-                            title="Protected data"
-                            value="Ready"
-                            description="The new account can immediately call secured pipeline routes."
-                        />
-                        <LoginFeatureCard
-                            title="Flow"
-                            value="Frontend-first"
-                            description="Create the account here, then continue straight into the dashboard."
-                        />
-                    </div>
+
+
                 </section>
 
                 <section className="rounded-4xl border border-white/10 bg-white p-8 text-slate-900 shadow-2xl shadow-black/25">

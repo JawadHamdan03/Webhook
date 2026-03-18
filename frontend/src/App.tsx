@@ -1,5 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { getJobs, getPipelines, login, register, type Job, type Pipeline } from './lib/api'
+import {
+  getJobs,
+  getPipelines,
+  login,
+  register,
+  createPipeline,
+  updatePipeline,
+  deletePipeline,
+  type Job,
+  type Pipeline
+} from './lib/api'
 import { getErrorMessage } from './lib/errorMessages.ts'
 import { clearStoredToken, getStoredToken, setStoredToken } from './lib/storage'
 import { DashboardPage } from './Pages/DashboardPage'
@@ -24,6 +34,10 @@ const App = () => {
   const [isLoadingData, setIsLoadingData] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [authView, setAuthView] = useState<AuthView>('login')
+  const [showPipelineModal, setShowPipelineModal] = useState(false)
+  const [editingPipeline, setEditingPipeline] = useState<Pipeline | null>(null)
+  const [pipelineError, setPipelineError] = useState<string | null>(null)
+  const [isPipelineSubmitting, setIsPipelineSubmitting] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -39,7 +53,7 @@ const App = () => {
       setError(null)
 
       try {
-        const [pipelineRows, jobRows] = await Promise.all([getPipelines(token), getJobs()])
+        const [pipelineRows, jobRows] = await Promise.all([getPipelines(token), getJobs(token)])
         if (!isActive) {
           return
         }
@@ -131,6 +145,101 @@ const App = () => {
     setAuthView('login')
   }
 
+  const handleCreatePipeline = async (formData: {
+    name: string
+    actionType: 'add_fields' | 'transform' | 'filter'
+    actionConfig: Record<string, unknown>
+  }) => {
+    if (!token) return
+
+    setPipelineError(null)
+    setIsPipelineSubmitting(true)
+
+    try {
+      const created = await createPipeline(
+        {
+          name: formData.name,
+          actionType: formData.actionType,
+          actionConfig: formData.actionConfig
+        },
+        token
+      )
+
+      setPipelines(prev => [...prev, created])
+      setShowPipelineModal(false)
+      setEditingPipeline(null)
+    } catch (err) {
+      const errorCode = err instanceof Error ? err.message : 'request_failed'
+      setPipelineError(getErrorMessage(errorCode))
+    } finally {
+      setIsPipelineSubmitting(false)
+    }
+  }
+
+  const handleUpdatePipeline = async (formData: {
+    name: string
+    actionType: 'add_fields' | 'transform' | 'filter'
+    actionConfig: Record<string, unknown>
+  }) => {
+    if (!token || !editingPipeline) return
+
+    setPipelineError(null)
+    setIsPipelineSubmitting(true)
+
+    try {
+      const updated = await updatePipeline(
+        editingPipeline.id,
+        {
+          name: formData.name,
+          actionType: formData.actionType,
+          actionConfig: formData.actionConfig
+        },
+        token
+      )
+
+      setPipelines(prev =>
+        prev.map(p => (p.id === editingPipeline.id ? updated : p))
+      )
+      setShowPipelineModal(false)
+      setEditingPipeline(null)
+    } catch (err) {
+      const errorCode = err instanceof Error ? err.message : 'request_failed'
+      setPipelineError(getErrorMessage(errorCode))
+    } finally {
+      setIsPipelineSubmitting(false)
+    }
+  }
+
+  const handleDeletePipeline = async (pipelineId: string) => {
+    if (!token || !window.confirm('Are you sure you want to delete this pipeline?')) return
+
+    try {
+      await deletePipeline(pipelineId, token)
+      setPipelines(prev => prev.filter(p => p.id !== pipelineId))
+    } catch (err) {
+      const errorCode = err instanceof Error ? err.message : 'request_failed'
+      setError(getErrorMessage(errorCode))
+    }
+  }
+
+  const handleOpenCreateModal = () => {
+    setEditingPipeline(null)
+    setPipelineError(null)
+    setShowPipelineModal(true)
+  }
+
+  const handleOpenEditModal = (pipeline: Pipeline) => {
+    setEditingPipeline(pipeline)
+    setPipelineError(null)
+    setShowPipelineModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowPipelineModal(false)
+    setEditingPipeline(null)
+    setPipelineError(null)
+  }
+
   const jobsByStatus = jobs.reduce<Record<string, number>>((acc, job) => {
     acc[job.status] = (acc[job.status] ?? 0) + 1
     return acc
@@ -176,6 +285,16 @@ const App = () => {
       jobsByStatus={jobsByStatus}
       onLogout={handleLogout}
       pipelines={pipelines}
+      onCreatePipeline={handleCreatePipeline}
+      onUpdatePipeline={handleUpdatePipeline}
+      onDeletePipeline={handleDeletePipeline}
+      onOpenCreateModal={handleOpenCreateModal}
+      onOpenEditModal={handleOpenEditModal}
+      onCloseModal={handleCloseModal}
+      showPipelineModal={showPipelineModal}
+      editingPipeline={editingPipeline}
+      pipelineError={pipelineError}
+      isPipelineSubmitting={isPipelineSubmitting}
     />
   )
 }
