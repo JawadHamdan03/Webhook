@@ -29,6 +29,19 @@ const filterConfigSchema = z
         message: "filter_requires_condition"
     });
 
+const removeFieldsConfigSchema = z.object({
+    fields: z.array(z.string().min(1)).min(1)
+});
+
+const lowercaseConfigSchema = z.object({
+    fields: z.array(z.string().min(1)).min(1)
+});
+
+const maskFieldsConfigSchema = z.object({
+    fields: z.array(z.string().min(1)).min(1),
+    mask: z.string().min(1).optional()
+});
+
 const pipelineConfigSchema = z.discriminatedUnion("actionType", [
     z.object({
         actionType: z.literal("add_fields"),
@@ -41,6 +54,18 @@ const pipelineConfigSchema = z.discriminatedUnion("actionType", [
     z.object({
         actionType: z.literal("filter"),
         actionConfig: filterConfigSchema
+    }),
+    z.object({
+        actionType: z.literal("remove_fields"),
+        actionConfig: removeFieldsConfigSchema
+    }),
+    z.object({
+        actionType: z.literal("lowercase"),
+        actionConfig: lowercaseConfigSchema
+    }),
+    z.object({
+        actionType: z.literal("mask_fields"),
+        actionConfig: maskFieldsConfigSchema
     })
 ]);
 
@@ -55,7 +80,7 @@ export const pipelineUpdateSchema = z
     .object({
         name: z.string().min(1).optional(),
         sourceKey: sourceKeySchema.optional(),
-        actionType: z.enum(["add_fields", "transform", "filter"]).optional(),
+        actionType: z.enum(["add_fields", "transform", "filter", "remove_fields", "lowercase", "mask_fields"]).optional(),
         actionConfig: z.record(z.string(), z.unknown()).optional()
     })
     .superRefine((data, ctx) => {

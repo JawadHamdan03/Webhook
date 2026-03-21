@@ -41,7 +41,6 @@ beforeEach(() => {
 
 describe("GET /jobs", () => {
     it("returns 200 with an array of jobs", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.listJobsWithFilters).mockResolvedValue([mockJob] as any);
 
         const res = await request(app).get("/jobs");
@@ -51,7 +50,6 @@ describe("GET /jobs", () => {
     });
 
     it("returns 200 and filters by valid status", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.listJobsWithFilters).mockResolvedValue([] as any);
 
         const res = await request(app).get("/jobs?status=pending");
@@ -59,7 +57,6 @@ describe("GET /jobs", () => {
     });
 
     it("returns 200 and filters by valid pipelineId (UUID)", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.listJobsWithFilters).mockResolvedValue([] as any);
 
         const res = await request(app).get("/jobs?pipelineId=550e8400-e29b-41d4-a716-446655440000");
@@ -80,7 +77,6 @@ describe("GET /jobs", () => {
 
 describe("GET /jobs/:id", () => {
     it("returns 200 with job data when the job exists", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.getJob).mockResolvedValue(mockJob as any);
 
         const res = await request(app).get("/jobs/job-1");
@@ -100,7 +96,6 @@ describe("GET /jobs/:id", () => {
 
 describe("GET /jobs/:id/deliveries", () => {
     it("returns 200 with delivery attempts", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.getDeliveriesByJobId).mockResolvedValue([mockDelivery] as any);
 
         const res = await request(app).get("/jobs/job-1/deliveries");
@@ -110,7 +105,6 @@ describe("GET /jobs/:id/deliveries", () => {
     });
 
     it("returns 200 with empty array when no deliveries exist", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.getDeliveriesByJobId).mockResolvedValue([] as any);
 
         const res = await request(app).get("/jobs/job-1/deliveries");

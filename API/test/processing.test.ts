@@ -126,3 +126,49 @@ describe("runProcessing – filter", () => {
         expect(result.skipped).toBeUndefined();
     });
 });
+
+describe("runProcessing – remove_fields", () => {
+    it("removes listed fields from payload", () => {
+        const result = runProcessing(
+            "remove_fields",
+            { fields: ["password", "token"] },
+            { id: "1", password: "secret", token: "abc" }
+        );
+
+        expect(result.output).toEqual({ id: "1" });
+    });
+});
+
+describe("runProcessing – lowercase", () => {
+    it("lowercases listed string fields", () => {
+        const result = runProcessing(
+            "lowercase",
+            { fields: ["email", "country"] },
+            { email: "USER@EXAMPLE.COM", country: "US", age: 30 }
+        );
+
+        expect(result.output).toEqual({ email: "user@example.com", country: "us", age: 30 });
+    });
+});
+
+describe("runProcessing – mask_fields", () => {
+    it("masks listed fields with provided mask", () => {
+        const result = runProcessing(
+            "mask_fields",
+            { fields: ["cardNumber"], mask: "[REDACTED]" },
+            { cardNumber: "4111111111111111", amount: 100 }
+        );
+
+        expect(result.output).toEqual({ cardNumber: "[REDACTED]", amount: 100 });
+    });
+
+    it("uses default mask when no mask is provided", () => {
+        const result = runProcessing(
+            "mask_fields",
+            { fields: ["ssn"] },
+            { ssn: "123-45-6789", name: "Alice" }
+        );
+
+        expect(result.output).toEqual({ ssn: "***", name: "Alice" });
+    });
+});

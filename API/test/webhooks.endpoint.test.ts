@@ -61,9 +61,7 @@ describe("POST /webhooks/:sourceKey", () => {
     });
 
     it("returns 202 with jobId when the pipeline exists", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(pipelinesService.getPipelineBySourceKey).mockResolvedValue(mockPipeline as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(jobsService.createJob).mockResolvedValue({ id: "job-123" } as any);
 
         const res = await request(app)

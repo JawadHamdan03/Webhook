@@ -8,7 +8,7 @@ import {
     uuid
 } from "drizzle-orm/pg-core";
 
-export const actionTypeEnum = pgEnum("action_type", ["add_fields", "transform", "filter"]);
+export const actionTypeEnum = pgEnum("action_type", ["add_fields", "transform", "filter", "remove_fields", "lowercase", "mask_fields"]);
 export const jobStatusEnum = pgEnum("job_status", ["pending", "processing", "completed", "failed"]);
 export const deliveryStatusEnum = pgEnum("delivery_status", ["pending", "success", "failed"]);
 

@@ -6,7 +6,7 @@ import { pipelines } from "../config/db/schema.js"
 export type PipelinePayload = {
     name: string
     sourceKey?: string
-    actionType: "add_fields" | "transform" | "filter"
+    actionType: "add_fields" | "transform" | "filter" | "remove_fields" | "lowercase" | "mask_fields"
     actionConfig: Record<string, unknown>
 }
 

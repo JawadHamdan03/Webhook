@@ -15,7 +15,7 @@ type JobRow = {
     id: string;
     pipeline_id: string;
     payload: Record<string, unknown>;
-    action_type: "add_fields" | "transform" | "filter";
+    action_type: "add_fields" | "transform" | "filter" | "remove_fields" | "lowercase" | "mask_fields";
     action_config: Record<string, unknown>;
 };
 
