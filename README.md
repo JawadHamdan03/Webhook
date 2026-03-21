@@ -15,14 +15,13 @@ A full-stack webhook processing platform that receives external webhook events, 
 4. [Design Decisions](#design-decisions)
 5. [Project Structure](#project-structure)
 6. [Setup](#setup)
-7. [Render Deployment](#render-deployment)
-8. [Usage Walkthrough](#usage-walkthrough)
-9. [API Reference](#api-reference)
-10. [Pipeline Actions](#pipeline-actions)
-11. [Data Model](#data-model)
-12. [Quality and Testing](#quality-and-testing)
-13. [Operations and Troubleshooting](#operations-and-troubleshooting)
-14. [Known Limitations and Next Improvements](#known-limitations-and-next-improvements)
+7. [Usage Walkthrough](#usage-walkthrough)
+8. [API Reference](#api-reference)
+9. [Pipeline Actions](#pipeline-actions)
+10. [Data Model](#data-model)
+11. [Quality and Testing](#quality-and-testing)
+12. [Operations and Troubleshooting](#operations-and-troubleshooting)
+13. [Known Limitations and Next Improvements](#known-limitations-and-next-improvements)
 
 ## What This Project Solves
 
@@ -287,60 +286,6 @@ Run dev server:
 ```bash
 npm run dev
 ```
-
-## Render Deployment
-
-This repository includes a Render Blueprint file:
-
-- `render.yaml`
-
-It provisions:
-
-- `webhook-db` (PostgreSQL)
-- `webhook-api` (Node web service)
-- `webhook-worker` (Node background worker)
-- `webhook-frontend` (static site)
-
-### 1) Push latest code
-
-Make sure your latest `render.yaml` and source changes are on GitHub.
-
-### 2) Create services from Blueprint
-
-In Render:
-
-- New + -> Blueprint
-- Connect your GitHub repo
-- Select branch `main`
-- Render detects `render.yaml` and shows the resources to create
-- Click Apply
-
-### 3) Configure environment details
-
-The blueprint already wires:
-
-- `DATABASE_URL` from Render Postgres to API and Worker
-- `JWT_SECRET` auto-generated for API
-- `VITE_API_BASE_URL` for frontend
-
-Important:
-
-- If your API URL is not `https://webhook-api.onrender.com`, update `VITE_API_BASE_URL` in `render.yaml` before deployment.
-
-### 4) Post-deploy checks
-
-After deployment completes:
-
-- Open API URL and verify service is running
-- Open frontend URL and test register/login
-- Create a pipeline and subscriber
-- Send a test webhook and confirm jobs + delivery attempts update
-
-### 5) Operational notes
-
-- API runs `npm run apply-schema` as a pre-deploy step to keep schema up to date.
-- Worker runs continuously with `npm run worker` to process jobs and retries.
-- Free-tier services may cold start; first request can be slower.
 
 ## Usage Walkthrough
 
