@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Pipeline } from '../lib/api'
 
-type ActionType = 'add_fields' | 'transform' | 'filter'
+type ActionType = 'add_fields' | 'transform' | 'filter' | 'remove_fields' | 'lowercase' | 'mask_fields'
 
 export type PipelineFormData = {
     name: string
@@ -76,6 +76,9 @@ export function PipelineForm({ initialData, onSubmit, onCancel, isLoading, error
                     <option value="add_fields">Add Fields</option>
                     <option value="transform">Transform</option>
                     <option value="filter">Filter</option>
+                    <option value="remove_fields">Remove Fields</option>
+                    <option value="lowercase">Lowercase Fields</option>
+                    <option value="mask_fields">Mask Fields</option>
                 </select>
             </div>
 
@@ -92,6 +95,30 @@ export function PipelineForm({ initialData, onSubmit, onCancel, isLoading, error
 
             {formData.actionType === 'filter' && (
                 <FilterConfig config={formData.actionConfig} onChange={updateActionConfig} disabled={isLoading} />
+            )}
+
+            {formData.actionType === 'remove_fields' && (
+                <FieldsListConfig
+                    title="Fields to Remove"
+                    placeholder="password, token, internalNotes"
+                    config={formData.actionConfig}
+                    onChange={updateActionConfig}
+                    disabled={isLoading}
+                />
+            )}
+
+            {formData.actionType === 'lowercase' && (
+                <FieldsListConfig
+                    title="Fields to Lowercase"
+                    placeholder="email, country"
+                    config={formData.actionConfig}
+                    onChange={updateActionConfig}
+                    disabled={isLoading}
+                />
+            )}
+
+            {formData.actionType === 'mask_fields' && (
+                <MaskFieldsConfig config={formData.actionConfig} onChange={updateActionConfig} disabled={isLoading} />
             )}
 
             <div className="flex gap-2 pt-4">
@@ -271,6 +298,90 @@ function FilterConfig({
                         disabled={disabled}
                     />
                 </div>
+            </div>
+        </div>
+    )
+}
+
+function FieldsListConfig({
+    title,
+    placeholder,
+    config,
+    onChange,
+    disabled
+}: {
+    title: string
+    placeholder: string
+    config: Record<string, unknown>
+    onChange: (updates: Record<string, unknown>) => void
+    disabled?: boolean
+}) {
+    const fields = (config.fields as string[]) || []
+
+    return (
+        <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+                {title} (comma-separated)
+            </label>
+            <input
+                type="text"
+                value={fields.join(', ')}
+                onChange={(e) =>
+                    onChange({
+                        fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                    })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={placeholder}
+                disabled={disabled}
+            />
+        </div>
+    )
+}
+
+function MaskFieldsConfig({
+    config,
+    onChange,
+    disabled
+}: {
+    config: Record<string, unknown>
+    onChange: (updates: Record<string, unknown>) => void
+    disabled?: boolean
+}) {
+    const fields = (config.fields as string[]) || []
+    const mask = (config.mask as string) || '***'
+
+    return (
+        <div className="space-y-3">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fields to Mask (comma-separated)
+                </label>
+                <input
+                    type="text"
+                    value={fields.join(', ')}
+                    onChange={(e) =>
+                        onChange({
+                            fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                        })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="password, cardNumber, ssn"
+                    disabled={disabled}
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mask Value
+                </label>
+                <input
+                    type="text"
+                    value={mask}
+                    onChange={(e) => onChange({ mask: e.target.value || '***' })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="***"
+                    disabled={disabled}
+                />
             </div>
         </div>
     )

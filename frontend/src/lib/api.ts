@@ -35,7 +35,7 @@ export type Pipeline = {
     id: string
     name: string
     sourceKey: string
-    actionType: 'add_fields' | 'transform' | 'filter'
+    actionType: 'add_fields' | 'transform' | 'filter' | 'remove_fields' | 'lowercase' | 'mask_fields'
     actionConfig: Record<string, unknown>
     createdAt?: string
     updatedAt?: string

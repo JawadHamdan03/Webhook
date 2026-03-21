@@ -314,7 +314,7 @@ const App = () => {
 
   const handleCreatePipeline = async (formData: {
     name: string
-    actionType: 'add_fields' | 'transform' | 'filter'
+    actionType: 'add_fields' | 'transform' | 'filter' | 'remove_fields' | 'lowercase' | 'mask_fields'
     actionConfig: Record<string, unknown>
   }) => {
     if (!token) return
@@ -346,7 +346,7 @@ const App = () => {
 
   const handleUpdatePipeline = async (formData: {
     name: string
-    actionType: 'add_fields' | 'transform' | 'filter'
+    actionType: 'add_fields' | 'transform' | 'filter' | 'remove_fields' | 'lowercase' | 'mask_fields'
     actionConfig: Record<string, unknown>
   }) => {
     if (!token || !editingPipeline) return
