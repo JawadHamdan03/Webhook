@@ -54,7 +54,7 @@ This project provides an internal webhook processing backbone where you can:
 ## Architecture
 
 High-level event flow:
-![Architecture Diagram](docs/architecture.png)
+![Architecture Diagram](workflow.png)
 
 High-level event flow:
 
