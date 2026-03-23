@@ -54,6 +54,9 @@ This project provides an internal webhook processing backbone where you can:
 ## Architecture
 
 High-level event flow:
+![Architecture Diagram](docs/architecture.png)
+
+High-level event flow:
 
 ```text
 Webhook Sender

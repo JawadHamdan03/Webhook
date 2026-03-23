@@ -152,6 +152,8 @@ function AddFieldsConfig({
     disabled?: boolean
 }) {
     const add = (config.add as Record<string, unknown>) || {}
+    const [raw, setRaw] = useState(() => JSON.stringify(add, null, 2) || '{}')
+    const [jsonError, setJsonError] = useState(false)
 
     return (
         <div className="space-y-2">
@@ -159,20 +161,23 @@ function AddFieldsConfig({
                 Fields to Add (JSON)
             </label>
             <textarea
-                value={JSON.stringify(add, null, 2)}
+                value={raw}
                 onChange={(e) => {
+                    setRaw(e.target.value)
                     try {
                         const parsed = JSON.parse(e.target.value)
                         onChange({ add: parsed })
+                        setJsonError(false)
                     } catch {
-                        // Allow invalid JSON while typing
+                        setJsonError(true)
                     }
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${jsonError ? 'border-red-400' : 'border-gray-300'}`}
                 placeholder='{"fieldName": "value"}'
                 rows={4}
                 disabled={disabled}
             />
+            {jsonError && <p className="text-xs text-red-500">Invalid JSON — changes won't be saved until fixed</p>}
         </div>
     )
 }
@@ -188,6 +193,11 @@ function TransformConfig({
 }) {
     const pick = (config.pick as string[]) || []
     const uppercase = (config.uppercase as string[]) || []
+    const rename = (config.rename as Record<string, string>) || {}
+    const [rawRename, setRawRename] = useState(() =>
+        Object.keys(rename).length ? JSON.stringify(rename, null, 2) : ''
+    )
+    const [renameError, setRenameError] = useState(false)
 
     return (
         <div className="space-y-3">
@@ -200,13 +210,41 @@ function TransformConfig({
                     value={pick.join(', ')}
                     onChange={(e) =>
                         onChange({
-                            pick: e.target.value.split(',').map(s => s.trim()).filter(Boolean) || undefined
+                            pick: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                         })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="field1, field2, field3"
                     disabled={disabled}
                 />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rename Fields (JSON — oldName: newName)
+                </label>
+                <textarea
+                    value={rawRename}
+                    onChange={(e) => {
+                        setRawRename(e.target.value)
+                        if (e.target.value.trim() === '') {
+                            onChange({ rename: undefined })
+                            setRenameError(false)
+                            return
+                        }
+                        try {
+                            const parsed = JSON.parse(e.target.value)
+                            onChange({ rename: parsed })
+                            setRenameError(false)
+                        } catch {
+                            setRenameError(true)
+                        }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${renameError ? 'border-red-400' : 'border-gray-300'}`}
+                    placeholder='{"oldFieldName": "newFieldName"}'
+                    rows={3}
+                    disabled={disabled}
+                />
+                {renameError && <p className="text-xs text-red-500">Invalid JSON — changes won't be saved until fixed</p>}
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -217,7 +255,7 @@ function TransformConfig({
                     value={uppercase.join(', ')}
                     onChange={(e) =>
                         onChange({
-                            uppercase: e.target.value.split(',').map(s => s.trim()).filter(Boolean) || undefined
+                            uppercase: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                         })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -240,8 +278,8 @@ function FilterConfig({
 }) {
     const field = (config.field as string) || ''
     const equals = config.equals
-    const greaterThan = (config.greaterThan as number) || ''
-    const lessThan = (config.lessThan as number) || ''
+    const greaterThan: number | '' = config.greaterThan !== undefined && config.greaterThan !== null ? (config.greaterThan as number) : ''
+    const lessThan: number | '' = config.lessThan !== undefined && config.lessThan !== null ? (config.lessThan as number) : ''
 
     return (
         <div className="space-y-3">
@@ -377,7 +415,7 @@ function MaskFieldsConfig({
                 <input
                     type="text"
                     value={mask}
-                    onChange={(e) => onChange({ mask: e.target.value || '***' })}
+                    onChange={(e) => onChange({ mask: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="***"
                     disabled={disabled}
