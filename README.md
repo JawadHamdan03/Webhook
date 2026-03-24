@@ -22,6 +22,7 @@ A full-stack webhook processing platform that receives external webhook events, 
 11. [Quality and Testing](#quality-and-testing)
 12. [Operations and Troubleshooting](#operations-and-troubleshooting)
 13. [Known Limitations and Next Improvements](#known-limitations-and-next-improvements)
+14. [Swagger Docs](#swagger-docs)
 
 ## What This Project Solves
 
@@ -201,6 +202,7 @@ Services exposed:
 
 - Frontend: http://localhost:3000
 - API: http://localhost:5000
+- Swagger UI: http://localhost:5000/docs
 - Postgres: localhost:5432
 
 Compose services:
@@ -330,6 +332,15 @@ You receive an accepted response with `jobId`.
 ## API Reference
 
 Base URL (default): `http://localhost:5000`
+
+Swagger UI:
+- `GET /docs` -> `http://localhost:5000/docs`
+
+## Swagger Docs
+
+- Interactive OpenAPI documentation: `http://localhost:5000/docs`
+- Generated from route annotations in `API/src/routes/*.ts`
+- Supports trying endpoints directly from the browser (use a JWT for protected routes)
 
 Error model (common):
 
